@@ -1,1 +1,40 @@
 CDISC PILTO ADAM DATASETS USED
+Download the Data from the below link
+https://github.com/cdisc-org/sdtm-adam-pilot-project/blob/master/sdtmadampilotprojectreport.pdf
+Python Code to read the ADaM Datasets in the form of excel sheets
+import pandas as pd
+import numpy as np
+from pathlib import Path
+
+DATA_DIR = Path("C:/R/ADaM/excel_output")
+OUTPUT_DIR = Path("C:/R/ADaM/excel_output/outputs")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+ADSL_FILE = DATA_DIR / "adsl.xlsx"
+ADAE_FILE = DATA_DIR / "adae.xlsx"
+ADLBHY_FILE = DATA_DIR / "adlbhy.xlsx"
+
+
+adsl = pd.read_excel(ADSL_FILE, sheet_name="ADSL")
+adae = pd.read_excel(ADAE_FILE, sheet_name="ADAE")
+adlb = pd.read_excel(ADLBHY_FILE, sheet_name="ADLBHY")
+
+def clean_char_cols(df):
+    for col in df.select_dtypes(include="object").columns:
+        df[col] = df[col].astype(str).str.strip()
+        df[col] = df[col].replace({"nan": np.nan, "None": np.nan})
+    return df
+
+adsl = clean_char_cols(adsl)
+adae = clean_char_cols(adae)
+adlb = clean_char_cols(adlb)
+
+required_cols = {
+    "ADSL": ["USUBJID", "TRT01A", "SAFFL", "SEX", "RACE", "AGE"],
+    "ADAE": ["USUBJID", "TRTA", "AESOC", "AEDECOD", "AESER", "AESEV", "TRTEMFL"],
+    "ADLB": ["USUBJID", "TRTA", "PARAM", "PARAMCD", "AVAL", "BASE", "AVISIT"]
+}
+
+for ds_name, df in [("ADSL", adsl), ("ADAE", adae), ("ADLB", adlb)]:
+    missing = [c for c in required_cols[ds_name] if c not in df.columns]
+    print(f"{ds_name} missing columns: {missing if missing else 'None'}")
